@@ -13,18 +13,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
+import com.app.config.filter.JwtTokenValidator;
 import com.app.services.UserDetailServiceImpl;
-
-import jakarta.validation.constraints.Null;
+import com.app.util.JwtUtils;
 
 @Configuration
 @EnableWebSecurity
@@ -32,20 +28,26 @@ import jakarta.validation.constraints.Null;
 public class SecurityConfig {
 
     @Autowired
+    private JwtUtils jwtUtils;
+
+    @Autowired
     private AuthenticationConfiguration authenticationConfiguration;
 
     // @Bean
-    // public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-    //     return httpSecurity
-    //         .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity in this example
-    //         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-    //         .authorizeHttpRequests(http -> {
-    //             http.requestMatchers(HttpMethod.GET, "/auth/hello").permitAll();
-    //             http.requestMatchers(HttpMethod.GET, "/auth/hello-secured").hasAuthority("READ");
-    //             http.anyRequest().authenticated();
-    //         })
-    //         .httpBasic(Customizer.withDefaults()) // Enable basic auth for simplicity
-    //         .build();
+    // public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity)
+    // throws Exception {
+    // return httpSecurity
+    // .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity in this example
+    // .sessionManagement(session ->
+    // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+    // .authorizeHttpRequests(http -> {
+    // http.requestMatchers(HttpMethod.GET, "/auth/hello").permitAll();
+    // http.requestMatchers(HttpMethod.GET,
+    // "/auth/hello-secured").hasAuthority("READ");
+    // http.anyRequest().authenticated();
+    // })
+    // .httpBasic(Customizer.withDefaults()) // Enable basic auth for simplicity
+    // .build();
     // }
 
     @Bean
@@ -69,25 +71,34 @@ public class SecurityConfig {
 
     // @Bean
     // public UserDetailsService userDetailsService() {
-    //     UserDetails user = User
-    //             .withUsername("user")
-    //             .password("1234")
-    //             .roles("ADMIN")
-    //             .authorities("READ", "CREATE")
-    //             .build();
-    //     return new InMemoryUserDetailsManager(user);
+    // UserDetails user = User
+    // .withUsername("user")
+    // .password("1234")
+    // .roles("ADMIN")
+    // .authorities("READ", "CREATE")
+    // .build();
+    // return new InMemoryUserDetailsManager(user);
     // }
-
-   
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity in this example
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            .httpBasic(Customizer.withDefaults()) // Enable basic auth for simplicity
-            .build();
+                .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity in this example
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(http -> {
+
+                    // Configurar los endpoints publicos
+                    http.requestMatchers(HttpMethod.POST,"auth/**").permitAll();
+
+                    // Configurar endopints privados
+                    http.requestMatchers(HttpMethod.POST, "/method/post").hasAnyRole("ADMIN","DEVELOPER");
+                    http.requestMatchers(HttpMethod.PATCH, "/method/patch").hasAnyAuthority("REFACTOR");
+                    http.requestMatchers(HttpMethod.GET,"/method/get").hasAnyAuthority("READ");
+                    //Configurar el resto de endopoint - NO ESPECIFICADOS
+                    http.anyRequest().denyAll();
+                })
+                .addFilterBefore(new JwtTokenValidator(jwtUtils), BasicAuthenticationFilter.class)
+                .build();
     }
 
 }
