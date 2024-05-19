@@ -13,18 +13,21 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @CrossOrigin("http://localhost:4200")
+@RequestMapping("/auth")
 public class TestAuthController {
 
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
@@ -41,6 +44,14 @@ public class TestAuthController {
         Map<String,String> response = new HashMap<>();
         response.put("message", "Autenticación exitosa");
         // Si se llega a este punto, la autenticación ha sido exitosa
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/get")
+    @PreAuthorize("hasAuthority('READ')")
+    public ResponseEntity hello(){
+        Map<String,String> response = new HashMap<>();
+        response.put("message", "hello with GET");
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
