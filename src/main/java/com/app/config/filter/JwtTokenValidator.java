@@ -3,7 +3,6 @@ package com.app.config.filter;
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.catalina.connector.Request;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
